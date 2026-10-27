@@ -2,8 +2,9 @@
 
 Every example is a complete query on the raw TPC-H tables, with no model file (item 15 needs a
 one-line model, because a restricted query cannot call `duckdb.table()`), re-run on
-`@malloydata/malloy` 0.0.435 (the latest release, 2 October 2026) with `@malloydata/db-duckdb`
-0.0.435 (DuckDB 1.5.5). The right answers come from plain SQL on the same database. To reproduce,
+`@malloydata/malloy` 0.0.435 (2 October 2026) with `@malloydata/db-duckdb` 0.0.435 (DuckDB
+1.5.5). On 0.0.436 (26 October), 4 is fixed, and 1, 2, 3, 5, 6, 7, 9, 10 and the messages of 15 to
+17 still reproduce. The right answers come from plain SQL on the same database. To reproduce,
 in DuckDB run `INSTALL tpch; LOAD tpch; CALL dbgen(sf = 1);` and use a DuckDB connection named
 `duckdb`; the data is generated deterministically, so the numbers match exactly.
 
@@ -16,9 +17,9 @@ linked below), against the compiler's source (the 0.0.435 package, and Malloy's 
 | 1 | `!~` with a filter expression matches instead of excluding | Bug in documented syntax | Reported as [#3159](https://github.com/malloydata/malloy/issues/3159) |
 | 2 | `?` with a regular expression compares text | Bug in documented syntax | Reported as [#3160](https://github.com/malloydata/malloy/issues/3160) |
 | 3 | `count()` through one `join_many` counts parents with no match | Bug in documented behavior | Open since 2024 (#1762) |
-| 4 | A `limit:` refinement drops the view's `order_by:` | Bug in documented behavior | Fixed on main, not released (#3136) |
+| 4 | A `limit:` refinement drops the view's `order_by:` | Bug in documented behavior | Fixed in 0.0.436 (#3136) |
 | 5 | `having:` on a dimension empties `all()` | Undocumented syntax Malloy accepts; should be an error | Reported as [#3163](https://github.com/malloydata/malloy/issues/3163) |
-| 6 | `exclude()` of an outer dimension in a nest returns one group's count | Bug in documented behavior | Reported as [#3161](https://github.com/malloydata/malloy/issues/3161) |
+| 6 | `exclude()` of an outer dimension in a nest returns the largest group's count | Bug in documented behavior | Reported as [#3161](https://github.com/malloydata/malloy/issues/3161) |
 | 7 | A join condition through the joined source's own join, or through a dimension defined by a join, breaks the SQL | Undocumented syntax Malloy accepts; should be an error | Open (#2486, #1482); dimension case added to [#2486](https://github.com/malloydata/malloy/issues/2486#issuecomment-6419519243) |
 | 8 | A `nullif()` dimension averaged across a fan-out fails | DuckDB bug, not Malloy's | New (DuckDB) |
 | 9 | `~` with a time or number range crashes the compiler | Bug in documented syntax | Reported as [#3162](https://github.com/malloydata/malloy/issues/3162) |
@@ -37,7 +38,7 @@ So nine are Malloy bugs: six in behavior the docs describe (1, 2, 3, 4, 6 and 9)
 Malloy accepts without documenting it (5 and 7), and one in error reporting (10). Six of the nine
 were new, and we reported all six on 20 October 2026, 10 as part of [#3164](https://github.com/malloydata/malloy/issues/3164). 3 and 7
 were already open upstream (we added the trigger condition and the code location to #1762), and 4
-is fixed on main. Issue 8 belongs to DuckDB, 11 is a trap
+is fixed in 0.0.436. Issue 8 belongs to DuckDB, 11 is a trap
 in how a model is written, and 12 to 14 are rules that models break often. Items 15 to 19 are
 error messages that sent models in circles in the agentic runs. We reported 10, 15, 16 and the
 messages of 17 together as [#3164](https://github.com/malloydata/malloy/issues/3164) (draft in [upstream/07-error-messages.md](upstream/07-error-messages.md)); 18 is minor and
@@ -198,8 +199,8 @@ LIMIT 3
   [Ordering](https://docs.malloydata.dev/documentation/language/order_by): "When an `order_by:` is
   applied in a refinement, it will fully override whatever the previous ordering was."
 - Upstream: reported as [malloydata/malloy#3137](https://github.com/malloydata/malloy/issues/3137)
-  and fixed on main by [#3136](https://github.com/malloydata/malloy/pull/3136) (merged 7 October
-  2026), which says the guard had been wrong since 0.0.218. No release has the fix yet.
+  and fixed by [#3136](https://github.com/malloydata/malloy/pull/3136) (merged 7 October 2026,
+  released in 0.0.436 on 26 October), which says the guard had been wrong since 0.0.218.
 
 Works instead: restate the order, `by_clerk + { order_by: o_clerk; limit: 3 }`:
 
@@ -254,7 +255,7 @@ run: duckdb.table('lineitem') -> {
 }
 ```
 
-**6. `exclude()` of an outer dimension in a nest returns one group's count**
+**6. `exclude()` of an outer dimension in a nest returns the largest group's count**
 
 The docs say a nested query may name an outer dimension in `exclude()`, so `all_lines` should count
 every line in every row. Unless the outer level has an `all()` or `exclude()` of its own, the outer
