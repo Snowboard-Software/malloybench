@@ -1,0 +1,21 @@
+.venv/
+runner/node_modules/
+datasets/*/build/
+datasets/*/*.duckdb
+datasets/*/*.duckdb.wal
+datasets/*/*.duckdb.tmp/
+datasets/*/raw/
+results/cache/
+results/runs/
+__pycache__/
+results/*.log
+results/validation/
+results/workdir_empty/
+datasets/*/*.shuffled.duckdb
+results/ledger.jsonl
+results/bug_adjusted.json
+# The runner pins its Malloy version through npm ci, so its lockfile is kept (the repo ignores lockfiles).
+!runner/package-lock.json
+
+# The public half, built by release/export_public.py
+release/out/
